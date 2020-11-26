@@ -218,7 +218,7 @@ func (r *PackageAware) Select(pool HostPool, request *http.Request) *UpstreamHos
 	if r.hashRing == nil {
 		r.hashRing = consistent.New()
 		r.workerNodeMap = make(map[string]*UpstreamHost)
-		r.loadThreshold=60 //To-Do JP:Parametrizar
+		r.loadThreshold=10 //To-Do JP:Parametrizar
 		for _, host := range pool {
 			if host.Available() {
 				r.hashRing.Add(host.Name)
@@ -226,19 +226,36 @@ func (r *PackageAware) Select(pool HostPool, request *http.Request) *UpstreamHos
 			}
 		}
 	}
-	bestHost, err := r.hashRing.Get(request.RequestURI)
-	if err != nil {
-		log.Println("[ERROR] There are no hosts in the Hash Ring: ", err)
+	// EBG - Nov 2020
+	// PASch uses power-of-2-choices, so we need to select 2 "best hosts", and select the least loaded between them both.
+	bestHost1, err1 := r.hashRing.Get(request.RequestURI+"host001")
+	bestHost2, err2 := r.hashRing.Get(request.RequestURI+"host002")
+	host := pool[0]
+	log.Println("[INFO] Default host - ", host.Name, " - ", host.Conns)
+	if err1 != nil && err2 != nil {
+		log.Println("[ERROR] There are no hosts in the Hash Ring: ", err1, err2)
 	} else {
-		host := r.workerNodeMap[bestHost]
+		if err1 != nil {
+			host = r.workerNodeMap[bestHost2]
+		} else if err2 != nil {
+			host = r.workerNodeMap[bestHost1]
+		} else {
+			host = r.workerNodeMap[bestHost1]
+			host2 := r.workerNodeMap[bestHost2]
+			if host.Conns >= host2.Conns {
+				host = host2
+			}
+		}
 		if host.Conns >= r.loadThreshold { // Find least loaded
 			host = r.selectLeastConnHost(pool)
+			log.Println("[INFO] Request LeastLoaded - ", host.Name, " - ", host.Conns)
+		} else{
+			log.Println("[INFO] Request PASch - ", host.Name, " - ", host.Conns)
 		}
 		return host
 
 	}
 	return nil
-
 }
 
 //Return worker least loaded
