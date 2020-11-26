@@ -92,7 +92,8 @@ func Run() {
 	case "stderr":
 		log.SetOutput(os.Stderr)
 	case "":
-		log.SetOutput(ioutil.Discard)
+		//log.SetOutput(ioutil.Discard)
+		log.SetOutput(os.Stderr)
 	default:
 		if logRollMB > 0 {
 			log.SetOutput(&lumberjack.Logger{
