@@ -136,6 +136,7 @@ func hostByHashing(pool HostPool, s string) *UpstreamHost {
 		index += i
 		host := pool[index%poolLen]
 		if host.Available() {
+			log.Println("[INFO] Request hostByHashing - ", host.Name, " - ", host.Conns) //EBG - log active conn number in selected node
 			return host
 		}
 	}
@@ -218,7 +219,7 @@ func (r *PackageAware) Select(pool HostPool, request *http.Request) *UpstreamHos
 	if r.hashRing == nil {
 		r.hashRing = consistent.New()
 		r.workerNodeMap = make(map[string]*UpstreamHost)
-		r.loadThreshold=10 //To-Do JP:Parametrizar
+		r.loadThreshold=16 //To-Do JP:Parametrizar
 		for _, host := range pool {
 			if host.Available() {
 				r.hashRing.Add(host.Name)
@@ -248,7 +249,7 @@ func (r *PackageAware) Select(pool HostPool, request *http.Request) *UpstreamHos
 		}
 		if host.Conns >= r.loadThreshold { // Find least loaded
 			host = r.selectLeastConnHost(pool)
-			log.Println("[INFO] Request LeastLoaded - ", host.Name, " - ", host.Conns)
+			//log.Println("[INFO] Request LeastConnHost - ", host.Name, " - ", host.Conns)
 		} else{
 			log.Println("[INFO] Request PASch - ", host.Name, " - ", host.Conns)
 		}
@@ -266,6 +267,7 @@ func (r *PackageAware) selectLeastConnHost(pool HostPool) *UpstreamHost {
 			targetIndex = i
 		}
 	}
+	log.Println("[INFO] Request LeastConnHost - ", pool[targetIndex].Name, " - ", pool[targetIndex].Conns) //EBG - log active conn number in selected node
 	return pool[targetIndex]
 }
 
@@ -296,7 +298,7 @@ func (r *Consistent_Hashing_Bounded) Select(pool HostPool, request *http.Request
 	} else {
 		r.hashRing.Inc(bestHost)
 		host := r.workerNodeMap[bestHost]
-
+		log.Println("[INFO] Request Consistent_Hashing_Bounded - ", host.Name, " - ", host.Conns) //EBG - log active conn number in selected node
 		return host
 	}
 	return nil
