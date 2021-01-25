@@ -103,6 +103,7 @@ func (r *LeastConn) Select(pool HostPool, request *http.Request) *UpstreamHost {
 			}
 		}
 	}
+	log.Println("[INFO] Request LeastConnHost - ", bestHost.Name, " - ", bestHost.Conns) //EBG - log active conn number in selected node
 	return bestHost
 }
 
@@ -219,7 +220,7 @@ func (r *PackageAware) Select(pool HostPool, request *http.Request) *UpstreamHos
 	if r.hashRing == nil {
 		r.hashRing = consistent.New()
 		r.workerNodeMap = make(map[string]*UpstreamHost)
-		r.loadThreshold=16 //To-Do JP:Parametrizar
+		r.loadThreshold=10 //To-Do JP:Parametrizar
 		for _, host := range pool {
 			if host.Available() {
 				r.hashRing.Add(host.Name)
@@ -267,7 +268,6 @@ func (r *PackageAware) selectLeastConnHost(pool HostPool) *UpstreamHost {
 			targetIndex = i
 		}
 	}
-	log.Println("[INFO] Request LeastConnHost - ", pool[targetIndex].Name, " - ", pool[targetIndex].Conns) //EBG - log active conn number in selected node
 	return pool[targetIndex]
 }
 
