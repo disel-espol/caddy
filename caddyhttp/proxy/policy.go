@@ -137,7 +137,7 @@ func hostByHashing(pool HostPool, s string) *UpstreamHost {
 		index += i
 		host := pool[index%poolLen]
 		if host.Available() {
-			log.Println("[INFO] Request hostByHashing - ", host.Name, " - ", host.Conns) //EBG - log active conn number in selected node
+			log.Println("[INFO] Request hostByHashing - ", s, " - ", host.Name, " - ", host.Conns) //EBG - log active conn number in selected node
 			return host
 		}
 	}
